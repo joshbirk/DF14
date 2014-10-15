@@ -1,0 +1,104 @@
+<apex:page showHeader="false" standardStylesheets="false" applyBodyTag="false" applyHtmlTag="false">
+<HTML>
+    <HEAD>
+    <script src="{!URLFOR($Resource.jquery)}"></script>
+    <script src="{!URLFOR($Resource.CanJS,'can.jquery.js')}"></script>
+    <script src="{!URLFOR($Resource.bootstrap,'js/bootstrap.js')}"></script>  
+    <link rel="stylesheet" href="{!URLFOR($Resource.bootstrap, 'css/bootstrap.css')}"></link>
+    <apex:remoteObjects >
+    	<apex:remoteObjectModel name="Contact" jsShorthand="contact" fields="FirstName,LastName,Id,Email"/>
+    	<script>
+        var contacts = new SObjectModel.contact();
+    	var data = [];	
+        
+    	$j = jQuery.noConflict();
+        
+
+        /* canJs */
+     	var Contact = can.Model.extend({
+            findAll : function(){
+                return $j.Deferred().resolve(data);
+                },
+            },
+        {});
+        
+        
+        // Organizes a list of todos
+        $j(document).ready(function() {
+            
+        var Contacts = can.Control.extend({
+          // called when a new Todos() is created
+          "init" : function( element , options ){
+            var el = this.element;
+            contacts.retrieve({},function(error, records) {
+                if(error) { console.log(error.message); }
+                else {
+                    data = records;
+                    Contact.findAll({},function(results) {
+                    	el.html( can.view('cMustache', {contacts: results}) );  
+                        });
+                }
+            });
+            },
+            ".delete click" : function(el, ev){
+            	contact = el.closest('tr').data('contact');
+                contact.del();
+                contact.destroy();
+                ev.stopPropagation();
+            },
+            ".data-input blur" : function(el, ev){
+                console.log(el.attr("data-type"));
+                contact = el.closest('tr').data('contact');
+                contact.set(el.attr("data-type"),el.val());
+                contact.update(updateCallback);
+                ev.stopPropagation();
+            }
+        });
+        
+        new Contacts("#cul");    
+        });    
+        
+        function updateCallback(err, ids){
+		    if (err) { 
+		        console.log(err); 
+		    } else {
+		        // Reload the contacts with current list
+		        console.log('updated');
+		    }
+		}
+       
+        </script>
+    </apex:remoteObjects>
+    </HEAD>
+    
+    <BODY>
+    <div id="cdiv"></div>
+    <ul id="cul"></ul>
+        
+    <!-- bind to changes in the todo list -->
+    <script type='text/mustache' id='cMustache'>
+    <table class="table table-bordered table-striped">
+		        <thead class="rich-table-head">
+		            <tr class="headerRow">
+		                <th>Name</th>
+		                <th>Email</th>
+                    	<th></th>
+		            </tr>
+		        </thead>
+		        <tbody> 
+    {{#contacts}}
+        <tr {{data 'contact'}} >
+            <td><a href="/{{_props.Id}}">{{ _props.FirstName }} {{ _props.LastName }}</a></td>
+            <td><input class="data-input" type="text" data-type="Email"   value="{{ _props.Email }}" /></td> 
+            <td><button class="delete">Delete</button></td>
+        </tr>  
+    {{/contacts}}
+    </tbody>
+    </table>
+    </script>    
+        
+        
+    
+    </BODY>
+</HTML>    
+</apex:page>

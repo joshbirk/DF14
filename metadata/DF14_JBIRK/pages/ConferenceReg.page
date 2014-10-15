@@ -1,0 +1,130 @@
+<apex:page standardStylesheets="false" 
+    showheader="false" 
+    sidebar="false" 
+    applyHtmlTag="false"
+    applyBodyTag="false"
+    docType="html-5.0"
+    >
+<HTML>
+<HEAD>
+    
+    <style>
+        #photoImage { display: none; }
+        button, input { width: 85%; }
+    </style>
+
+    <!-- defer allows for fast but logical script loading (could use async for non sequential) -->
+    <!-- VF insists on the ="true" part, but it makes no real difference -->
+    <script src="{!URLFOR($Resource.one2,'js/jquery.js')}"></script>
+    
+
+    <link rel="stylesheet" href="{!URLFOR($Resource.bootstrap, 'css/bootstrap.css')}"></link>
+    
+    <apex:remoteObjects >
+
+        <apex:remoteObjectModel name="Contact" jsShorthand="contact" fields="FirstName,LastName,Id,Email,Profile__c" />
+        
+        <script>
+        var dataUrl = '';   
+
+        
+        $j = jQuery.noConflict();  
+
+        
+        function handlePhoto(evt){ //via App Boogie Demo
+            var file = evt.target.files[0];
+            var reader = new FileReader();
+ 
+            reader.onload = (function(theFile) {
+                return function(e) {
+                    dataUrl = e.target.result;
+                    $j('#photoImage').attr('src', dataUrl).show();
+                };
+            })(file);
+ 
+            reader.readAsDataURL(file);
+        }
+
+        $j(document).ready(function() {
+             $j("#photoButton").click(function() {
+                $j("#photoFile").click();
+              });
+                
+              $j("#photoFile").change(handlePhoto);
+
+
+              $j("#submitButton").click(function() {
+                var newContact = {
+                    FirstName: $j('#fname').val(),
+                    LastName: $j('#lname').val(),
+                    Profile__c: '<img src="'+dataUrl+'" height=250 width=250 />'
+                };
+                var ct = new SObjectModel.Contact();
+                ct.create(newContact, function(err) {
+                    if(err) { 
+                        console.log(err);
+                        alert(err.message);
+                    }
+                    else {
+                        // this is the contact
+                        console.log(ct.log());     // Dump contact to log
+                        console.log(ct.get('Id')); // Id is set when create completes
+
+                        $j('#fname').val('');
+                     	$j('#lname').val('');
+                        $j('#email').val('');
+                        dataUrl = null;
+                        $j('#photoImage').attr('src', '').hide();   
+                    }
+                    });
+                });
+        });
+
+        </script>
+
+    </apex:remoteObjects>
+    <script src="https://bit.ly/vf_ios_js"></script>
+
+
+</HEAD>
+
+<BODY  class="container">
+<h1>Register</h1>    
+<div id="regform" class="row">
+	<div class="col-md-2 col-md-offset-5">
+    <article class="padded">
+    <section>
+        <input id="fname" placeholder="First Name" autofocus="true" />
+    </section>
+
+    <section>
+        <input id="lname" placeholder="Last Name" />
+    </section>
+
+    <section>
+        <input id="email" type="email" placeholder="Email" />
+    </section>
+    <section>
+    <br />
+    <button id="photoButton">take picture</button>
+    <br />
+    <input id="photoFile" type="file" accept="image/*" style="display: none;"/>
+    <br />
+    <div id="photoDiv">
+        <img id="photoImage" height="250" width="250" />
+    </div>
+    <br />
+    <button id="submitButton">submit</button>
+    </section>
+    </article>
+    </div>
+</div>
+
+
+</BODY>
+
+
+</HTML>
+
+
+</apex:page>
